@@ -132,51 +132,56 @@ services:
       dataOps:
 
 
-#  schema-registry:
-#    image: confluentinc/cp-schema-registry:7.5.1
-#    container_name: schema-registry
-#    ports:
-#      - "18081:8081"
-#    environment:
-#      SCHEMA_REGISTRY_HOSTNAME: schema-registry
-#      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka-broker-1:19092,kafka-broker-2:19092,kafka-broker-3:19092
-#      SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
-#      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:18081
-#    depends_on:
-#      - kafka-broker-1
-#      - kafka-broker-2
-#      - kafka-broker-3
-#    networks:
-#      dataOps:
-#
-#  console:
-#    image: docker.redpanda.com/redpandadata/console:v2.5.2
-#    entrypoint: /bin/sh
-#    command: |-
-#      -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
-#    ports:
-#      - "8080:8080"
-#    depends_on:
-#      - schema-registry
-#    environment:
-#      CONFIG_FILEPATH: /tmp/config.yml
-#      CONSOLE_CONFIG_FILE : >
-#        kafka:
-#          brokers: ["kafka-broker-1:19092","kafka-broker-2:19092","kafka-broker-3:19092"]
-#          schemaRegistry:
-#            enabled: true
-#            urls: ["http://schema-registry:18081"]
-#        redpanda:
-#          adminApi:
-#            enabled: false
-#            urls: ["http://kafka_broker:9644"]
-#        connect:
-#          enabled: false
-#          clusters:
-#            - name: local-connect-cluster
-#              url: http://connect:8083
-#    networks:
-#      dataOps:
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.1
+    container_name: schema-registry
+    ports:
+      - "18081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka-broker-1:19092,kafka-broker-2:19092,kafka-broker-3:19092
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    depends_on:
+      - kafka-broker-1
+      - kafka-broker-2
+      - kafka-broker-3
+    networks:
+      dataOps:
+
+  console:
+    image: docker.redpanda.com/redpandadata/console:v2.5.2
+    container_name: kafka-console
+    entrypoint: /bin/sh
+    command: |-
+      -c 'echo "$$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
+    ports:
+      - "8080:8080"
+    depends_on:
+      - schema-registry
+      - kafka-broker-1
+      - kafka-broker-2
+      - kafka-broker-3
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers:
+            - "kafka-broker-1:19092"
+            - "kafka-broker-2:19092"
+            - "kafka-broker-3:19092"
+          schemaRegistry:
+            enabled: true
+            urls:
+              - "http://schema-registry:8081"
+        redpanda:
+          adminApi:
+            enabled: false
+        connect:
+          enabled: false
+    networks:
+      dataOps:
+
 
 volumes:
   controller_data_1:
