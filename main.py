@@ -1,3 +1,7 @@
+import json
+import random
+import time
+import uuid
 from importlib.metadata import metadata
 from confluent_kafka import Producer
 from confluent_kafka.admin import AdminClient, NewTopic
@@ -14,6 +18,20 @@ TOPIC_NAME = 'financials_transactions'
 logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
+
+# Config Producer
+
+producer_conf = {
+    'bootstrap.servers': KAFKA_BROKERS,
+    'queue.buffering.max.messages': 10000,
+    'queue.buffering.max.kbytes': 512000,
+    'batch.num.messages' : 1000,
+    'linger.ms': 10,
+    'ack': 1,
+    'compression_type': 'gzip'
+}
+
+producer = Producer(producer_conf)
 
 
 def create_topic(topic_name):
@@ -39,5 +57,35 @@ def create_topic(topic_name):
     except Exception as e:
         logger.error(f"Error creating topic: {e}")
 
+
+def generate_transaction():
+    return dict(
+        transactionId = str(uuid.uuid4()),
+        userId = f"user-{random.randint(1, 100)}",
+        amount = round(random.uniform(50000, 150000), 2),
+        transactionTime = int(time.time()),
+        merchantId = random.choice(['merchant_1', 'merchant_2', 'merchant_3']),
+        transactionType=random.choice(['purchase', 'refund']),
+        location = f'location_{random.randint(1, 50)}',
+        payment_method=random.choice(['credit_card', 'paypal', 'bank_transfer']),
+        isinternational = random.choice([True, False]),
+        currency = random.choice(['USD','EUR','FCFA'])
+
+    )
+
+
+
+
+
 if __name__ == "__main__":
     create_topic(TOPIC_NAME)
+
+    while True:
+        transaction = generate_transaction()
+        try:
+            producer.produce(
+                topic=TOPIC_NAME,
+                key=transaction['userId'],
+                value=json.dumps(transaction).encode('utf-8'),
+                on_delivery=delivery_report
+            )
