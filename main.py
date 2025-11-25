@@ -1,5 +1,6 @@
 import json
 import random
+import threading
 import time
 import uuid
 from importlib.metadata import metadata
@@ -82,10 +83,7 @@ def delivery_report(err, msg):
         print(f'Record {msg.key()} successfully produced')
 
 
-
-if __name__ == "__main__":
-    create_topic(TOPIC_NAME)
-
+def produce_transaction(thread_id):
     while True:
         transaction = generate_transaction()
         try:
@@ -95,7 +93,30 @@ if __name__ == "__main__":
                 value=json.dumps(transaction).encode('utf-8'),
                 on_delivery=delivery_report
             )
-            print(f'Produced transaction: {transaction}')
+            print(f'Thread {thread_id} Produced transaction: {transaction}')
             producer.flush()
         except Exception as e:
             print(f'Failed to produce transaction: {e}')
+
+
+def producer_data_in_parallel(num_threads):
+    threads = []
+    try:
+        for i in range(num_threads):
+            thread = threading.Thread(target=produce_transaction, args=(i,))
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+        for thread in threads:
+            thread.join()
+
+
+
+    except Exception as e:
+        print(f'Error messages : {e}')
+
+if __name__ == "__main__":
+    create_topic(TOPIC_NAME)
+    producer_data_in_parallel(3)
+
+
