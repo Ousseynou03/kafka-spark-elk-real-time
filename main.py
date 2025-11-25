@@ -10,6 +10,8 @@ import logging
 
 
 KAFKA_BROKERS = "localhost:29092,localhost:39092,localhost:49092"
+#KAFKA_BROKERS="kafka-broker-1:19092,kafka-broker-2:19092,kafka-broker-3:19092"
+
 NUM_PARTITIONS = 5
 REPLICATION_FACTOR = 3
 TOPIC_NAME = 'financials_transactions'
@@ -27,8 +29,8 @@ producer_conf = {
     'queue.buffering.max.kbytes': 512000,
     'batch.num.messages' : 1000,
     'linger.ms': 10,
-    'ack': 1,
-    'compression_type': 'gzip'
+    'acks': 1,
+    'compression.type': 'gzip'
 }
 
 producer = Producer(producer_conf)
@@ -73,7 +75,11 @@ def generate_transaction():
 
     )
 
-
+def delivery_report(err, msg):
+    if err is not None:
+        print(f'delivery failed for record: {msg.key()}')
+    else:
+        print(f'Record {msg.key()} successfully produced')
 
 
 
@@ -89,3 +95,7 @@ if __name__ == "__main__":
                 value=json.dumps(transaction).encode('utf-8'),
                 on_delivery=delivery_report
             )
+            print(f'Produced transaction: {transaction}')
+            producer.flush()
+        except Exception as e:
+            print(f'Failed to produce transaction: {e}')
