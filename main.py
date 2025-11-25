@@ -8,9 +8,12 @@ import logging
 KAFKA_BROKERS = "localhost:29092,localhost:39092,localhost:49092"
 NUM_PARTITIONS = 5
 REPLICATION_FACTOR = 3
+TOPIC_NAME = 'financials_transactions'
 
 # Config logger
 logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 
 def create_topic(topic_name):
@@ -28,12 +31,13 @@ def create_topic(topic_name):
             for topic, future in fs.items():
                 try:
                     future.result()
-                    print(f"Created topic {topic_name} successfully")
+                    logger.info(f"Created topic {topic_name} successfully")
                 except Exception as e:
-                    print(f"Failed to create topic {topic_name}: {e}")
+                    logger.error(f"Failed to create topic {topic_name}: {e}")
         else:
-            print(f"Topic {topic_name} already exists")
+            logger.info(f"Topic {topic_name} already exists")
     except Exception as e:
-        print(f"Error creating topic: {e}")
+        logger.error(f"Error creating topic: {e}")
 
 if __name__ == "__main__":
+    create_topic(TOPIC_NAME)
