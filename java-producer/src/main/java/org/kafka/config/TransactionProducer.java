@@ -19,19 +19,17 @@ public class TransactionProducer implements CommandLineRunner {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    /** ========= CONVERSION DE TON PYTHON ========== */
 
     @Override
     public void run(String... args) throws Exception {
         createTopicIfNeeded();
-        startParallelProducers(3);
+        startParallelProducers(10);
 
         // Bloque le thread principal pour que les daemons continuent de tourner
         Thread.currentThread().join();
     }
 
 
-    /** --- Création du topic (équivalent Python AdminClient) --- */
     private void createTopicIfNeeded() throws Exception {
         Properties props = new Properties();
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_BROKERS);
@@ -49,7 +47,6 @@ public class TransactionProducer implements CommandLineRunner {
         }
     }
 
-    /** --- Démarre plusieurs threads Producers --- */
     private void startParallelProducers(int numThreads) {
         for (int i = 0; i < numThreads; i++) {
             int threadId = i;
@@ -60,7 +57,7 @@ public class TransactionProducer implements CommandLineRunner {
         }
     }
 
-    /** --- Boucle infinie pour produire des messages (comme Python) --- */
+
     private void produceLoop(int threadId) {
         KafkaProducer<String, String> producer = createKafkaProducer();
 
@@ -89,7 +86,7 @@ public class TransactionProducer implements CommandLineRunner {
         }
     }
 
-    /** --- Config producer (équivalent Python) --- */
+
     private KafkaProducer<String, String> createKafkaProducer() {
         Properties props = new Properties();
         props.put("bootstrap.servers", KAFKA_BROKERS);
@@ -103,7 +100,7 @@ public class TransactionProducer implements CommandLineRunner {
         return new KafkaProducer<>(props);
     }
 
-    /** --- Génération des transactions (copie exacte Python) --- */
+
     private Map<String, Object> generateTransaction() {
         Random r = new Random();
 
