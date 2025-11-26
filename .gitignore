@@ -1,1 +1,4 @@
 .venv
+java-producer/target
+jobs
+mnt
