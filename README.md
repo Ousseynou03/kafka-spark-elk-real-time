@@ -5,3 +5,6 @@ Before writting script , install package kafka
 
 
 1000 enregistrement par seconde dans un premier temps
+
+
+Pour spark processor , il faut d'abord commencer par installer pyspark

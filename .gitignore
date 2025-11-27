@@ -1,5 +1,4 @@
 .venv
 java-producer/target
-jobs
 mnt
 producer-java/.idea
