@@ -1,13 +1,19 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, LongType, BooleanType
+import uuid
 
-KAFKA_BROKERS = "localhost:29092,localhost:39092,localhost:49092"
+
+
+
+KAFKA_BROKERS="kafka-broker-1:19092,kafka-broker-2:19092,kafka-broker-3:19092"
 SOURCE_TOPIC = "financials_transactions"
 AGGREGATES_TOPIC = "transaction_aggregates"
 ANOMALY_TOPIC = "transaction_anomalies"
 CHECKPOINT_DIR = "/mnt/checkpoints"
+CHECKPOINT_DIR_AGG = f"{CHECKPOINT_DIR}/aggregates_{uuid.uuid4()}"
 STATES_DIR = "/mnt/spark-state"
+
 
 
 spark = (SparkSession
@@ -45,3 +51,34 @@ kafka_stream = (spark.readStream
 transaction_df = kafka_stream.selectExpr("CAST(value AS STRING)") \
     .select(from_json(col("value"), transaction_schema).alias("data")) \
     .select("data.*")
+
+transaction_df = transaction_df.withColumn('transactionTimestamp',
+                                           (col("transactionTime") / 1000).cast("timestamp"))
+
+aggregated_df = transaction_df.groupBy("merchantId") \
+                 .agg(
+                    sum("amount").alias("totalAmount"),
+                    count("*").alias("transactionCount")
+                 )
+
+
+aggregated_query = (aggregated_df.withColumn("key",col("merchantId").cast("string")) \
+                    .withColumn("value", to_json(struct(
+                    col("merchantId"),
+                    col("totalAmount"),
+                    col("transactionCount")
+                    )))
+                    .selectExpr("key", "value")
+                    .writeStream
+                    .format("kafka")
+                    .option("kafka.bootstrap.servers", KAFKA_BROKERS)
+                    .outputMode("update")
+                    .option("topic", AGGREGATES_TOPIC)
+                    .option("checkpointLocation", CHECKPOINT_DIR_AGG)
+                    )
+
+
+aggregated_query.start().awaitTermination()
+
+
+
