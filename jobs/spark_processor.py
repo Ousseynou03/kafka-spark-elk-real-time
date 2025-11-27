@@ -34,3 +34,14 @@ transaction_schema = StructType([
     StructField("isinternational", StringType(), True),
     StructField("currency", StringType(), True),
 ])
+
+kafka_stream = (spark.readStream
+                .format("kafka")
+                .option("kafka.bootstrap.servers", KAFKA_BROKERS)
+                .option("subscribe", SOURCE_TOPIC)
+                .option("startingOffsets", "earliest")
+                ).load()
+
+transaction_df = kafka_stream.selectExpr("CAST(value AS STRING)") \
+    .select(from_json(col("value"), transaction_schema).alias("data")) \
+    .select("data.*")
